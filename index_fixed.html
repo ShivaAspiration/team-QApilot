@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QAPilot Alerts Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f6fb; color: #1f2937; }
+    .container { max-width: 880px; margin: 32px auto; padding: 24px; background: #ffffff; border-radius: 12px; box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08); }
+    h1 { margin-top: 0; font-size: 28px; }
+    label { display: block; margin-top: 16px; font-weight: 600; }
+    input, textarea, select { width: 100%; padding: 12px 14px; margin-top: 8px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+    textarea { min-height: 100px; resize: vertical; }
+    button { margin-top: 24px; padding: 12px 20px; background: #2563eb; color: #ffffff; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; }
+    button:hover { background: #1d4ed8; }
+    .output { margin-top: 24px; padding: 18px; background: #eef2ff; border-radius: 10px; color: #1e3a8a; }
+    .output a { color: #1d4ed8; text-decoration: none; }
+    .output pre { white-space: pre-wrap; word-break: break-word; margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>QAPilot Alerts Portal</h1>
+    <p>Enter the API request values to download alerts and save them to Excel.</p>
+    <form id="alertForm">
+      <label for="startdate">Start Date</label>
+      <input id="startdate" name="startdate" type="date" value="2026-04-27" required />
+
+      <label for="enddate">End Date</label>
+      <input id="enddate" name="enddate" type="date" value="2026-04-30" required />
+
+      <label for="alerttype">Alert Type</label>
+      <input id="alerttype" name="alerttype" type="text" value="2" required />
+
+      <label for="token">Bearer Token</label>
+      <textarea id="token" name="token" placeholder="Paste Bearer token here" required></textarea>
+
+      <label for="validateKey">x-validate Value</label>
+      <input id="validateKey" name="validateKey" type="text" placeholder="H4iWf3Xy..." required />
+
+      <label for="output">Output Filename</label>
+      <input id="output" name="output" type="text" value="alerts_last_week.xlsx" />
+
+      <label for="projectFilter" style="display:none;" id="projectFilterLabel">Filter by Project</label>
+      <select id="projectFilter" name="projectFilter" style="display:none;"></select>
+
+      <button type="submit">Preview Results</button>
+    </form>
+
+    <button id="exportButton" type="button" style="display:none; margin-top: 12px; padding: 12px 20px; background: #10b981; color: #ffffff; border: none; border-radius: 10px; cursor: pointer; font-size: 16px;">Export to Excel</button>
+
+    <div class="output" id="result" style="display:none;"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('alertForm');
+    const result = document.getElementById('result');
+    const exportButton = document.getElementById('exportButton');
+    const projectFilter = document.getElementById('projectFilter');
+    const projectFilterLabel = document.getElementById('projectFilterLabel');
+    let previewData = null;
+    let lastPreviewBody = null;
+
+    const buildGroupHtml = (groups) => {
+      if (!groups || !groups.length) {
+        return '<p>No groups available.</p>';
+      }
+
+      return groups
+        .map((group) => {
+          const headers = Object.keys(group.sample[0] || {}).slice(0, 8);
+          const rows = group.sample
+            .map((row) =>
+              `<tr>${headers
+                .map((key) => `<td style="border:1px solid #e2e8f0; padding:8px;">${String(row[key] || '')}</td>`)
+                .join('')}</tr>`
+            )
+            .join('');
+
+          const headerRow = headers
+            .map((key) => `<th style="border:1px solid #e2e8f0; padding:8px; background:#eef2ff;">${key}</th>`)
+            .join('');
+
+          return `
+            <div style="margin-bottom:20px; border:1px solid #c7d2fe; border-radius:10px; padding:14px; background:#f8fafc;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:10px;">
+                <h3 style="margin:0;">Project: ${group.project} (${group.count} rows)</h3>
+                <button class="project-export-button" data-project="${encodeURIComponent(group.project)}" style="padding:10px 16px; background:#2563eb; color:#fff; border:none; border-radius:8px; cursor:pointer;">Export this project</button>
+              </div>
+              <div style="overflow-x:auto;">
+                <table style="border-collapse:collapse; width:100%; font-size:13px;">
+                  <thead><tr>${headerRow}</tr></thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+              <p style="margin:10px 0 0; color:#334155;">Showing up to ${group.sample.length} sample rows.</p>
+            </div>
+          `;
+        })
+        .join('');
+    };
+
+    const renderResult = (data, selectedProject = '') => {
+      const columnPreview = data.columns ? `<p><strong>Columns:</strong> ${data.columns.join(', ')}</p>` : '';
+      const groupHtml = buildGroupHtml(data.groups);
+      const selectionInfo = selectedProject ? `<p><strong>Filtering by:</strong> ${selectedProject}</p>` : '';
+      return `<p><strong>${data.message}</strong></p>${selectionInfo}${columnPreview}<p><strong>Project groups:</strong> ${data.groups.length}</p>${groupHtml}`;
+    };
+
+    const populateProjectFilter = (groups) => {
+      if (!groups || !groups.length) {
+        projectFilter.style.display = 'none';
+        projectFilterLabel.style.display = 'none';
+        return;
+      }
+
+      const options = [`<option value="">All projects</option>`].concat(
+        groups.map((group) => `<option value="${encodeURIComponent(group.project)}">${group.project} (${group.count})</option>`)
+      );
+      projectFilter.innerHTML = options.join('');
+      projectFilter.style.display = 'block';
+      projectFilterLabel.style.display = 'block';
+    };
+
+    const getSelectedProject = () => {
+      return projectFilter.value ? decodeURIComponent(projectFilter.value) : '';
+    };
+
+    const fetchPreview = async (body) => {
+      return fetch('/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    };
+
+    const fetchDownload = async (body) => {
+      return fetch('/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    };
+
+    const updateResultDisplay = () => {
+      if (!previewData) return;
+      const selectedProject = getSelectedProject();
+      const groups = selectedProject ? previewData.groups.filter((group) => group.project === selectedProject) : previewData.groups;
+      const displayData = { ...previewData, groups };
+      result.innerHTML = renderResult(displayData, selectedProject);
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      exportButton.style.display = 'none';
+      exportButton.disabled = false;
+      exportButton.textContent = 'Export to Excel';
+      previewData = null;
+      lastPreviewBody = null;
+      projectFilter.style.display = 'none';
+      projectFilterLabel.style.display = 'none';
+      result.style.display = 'none';
+      result.innerHTML = 'Loading preview...';
+      result.style.display = 'block';
+
+      const formData = new FormData(form);
+      const body = Object.fromEntries(formData.entries());
+
+      try {
+        const response = await fetchPreview(body);
+        const data = await response.json();
+
+        if (!response.ok) {
+          result.innerHTML = `<strong>Error:</strong> ${data.error || 'Unknown error'}<pre>${JSON.stringify(data.details || {}, null, 2)}</pre>`;
+          return;
+        }
+
+        lastPreviewBody = body;
+        previewData = data;
+        populateProjectFilter(data.groups);
+        result.innerHTML = renderResult(data, '');
+        if (data.rowCount) {
+          exportButton.style.display = 'inline-block';
+        }
+      } catch (error) {
+        result.innerHTML = `<strong>Error:</strong> ${error.message}`;
+      }
+    });
+
+    projectFilter.addEventListener('change', () => {
+      updateResultDisplay();
+    });
+
+    const performDownload = async (body) => {
+      exportButton.disabled = true;
+      exportButton.textContent = 'Exporting...';
+
+      try {
+        const response = await fetchDownload(body);
+        const data = await response.json();
+
+        if (!response.ok) {
+          result.innerHTML = `<strong>Error:</strong> ${data.error || 'Unknown error'}<pre>${JSON.stringify(data.details || {}, null, 2)}</pre>`;
+          return;
+        }
+
+        const downloadLink = data.downloadUrl ? `<p><a href="${data.downloadUrl}" target="_blank">Download ${data.filename}</a></p>` : '';
+        result.innerHTML = `<p>${data.message}</p>${downloadLink}`;
+      } catch (error) {
+        result.innerHTML = `<strong>Error:</strong> ${error.message}`;
+      } finally {
+        exportButton.disabled = false;
+        exportButton.textContent = 'Export to Excel';
+      }
+    };
+
+    exportButton.addEventListener('click', async () => {
+      if (!lastPreviewBody) return;
+
+      const body = {
+        ...lastPreviewBody,
+        project: getSelectedProject() || undefined,
+        output:
+          document.getElementById('output').value ||
+          `alerts_${document.getElementById('startdate').value}_to_${document.getElementById('enddate').value}.xlsx`,
+      };
+      await performDownload(body);
+    });
+
+    result.addEventListener('click', async (event) => {
+      const button = event.target.closest('.project-export-button');
+      if (!button || !lastPreviewBody) return;
+      const project = decodeURIComponent(button.dataset.project || '');
+      const body = {
+        ...lastPreviewBody,
+        project,
+        output:
+          document.getElementById('output').value ||
+          `alerts_${document.getElementById('startdate').value}_to_${document.getElementById('enddate').value}_${project.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`,
+      };
+      await performDownload(body);
+    });
+  </script>
+</body>
+</html>

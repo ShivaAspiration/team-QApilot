@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QAPilot Alerts Portal</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #2d3748;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 42px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      margin: 12px 0 0 0;
+      font-size: 16px;
+      opacity: 0.95;
+      font-weight: 300;
+    }
+    .main-card {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+    }
+    .form-section {
+      padding: 36px;
+      background: #f8f9fb;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #2d3748;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      background: white;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 13px 28px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    #executeButton {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      min-width: 180px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    #executeButton:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    #executeButton:active {
+      transform: translateY(0);
+    }
+    #exportButton {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      min-width: 180px;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    #exportButton:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+    }
+    #exportButton:active {
+      transform: translateY(0);
+    }
+    #exportButton:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .button-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+    }
+    .button-icon svg, .tab-button svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+      fill: currentColor;
+    }
+    .tab-button {
+      padding: 18px 24px !important;
+      background: none !important;
+      border: none !important;
+      cursor: pointer;
+      font-size: 15px !important;
+      font-weight: 600 !important;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+      margin: 0 !important;
+      box-shadow: none !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tab-button:hover {
+      color: #667eea;
+      background: none !important;
+    }
+    .tab-button.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+    .tab-content {
+      padding: 36px;
+    }
+    #summaryTab table, #rawdataTab table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    #tabNavigation {
+      display: flex;
+      background: #f8f9fb;
+      border-bottom: 2px solid #e2e8f0;
+      padding: 0 36px;
+    }
+    .tab-button {
+      padding: 18px 24px !important;
+      background: none !important;
+      border: none !important;
+      cursor: pointer;
+      font-size: 15px !important;
+      font-weight: 600 !important;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+      margin: 0 !important;
+      box-shadow: none !important;
+    }
+    .tab-button:hover {
+      color: #667eea;
+      background: none !important;
+    }
+    .tab-button.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+    .tab-content {
+      padding: 36px;
+    }
+    #summaryTab table, #rawdataTab table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    #summaryTab th, #rawdataTab th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 14px;
+      text-align: left;
+      font-weight: 600;
+      border: none;
+    }
+    #summaryTab td, #rawdataTab td {
+      padding: 12px 14px;
+      border: 1px solid #e2e8f0;
+    }
+    #summaryTab tr:nth-child(even), #rawdataTab tr:nth-child(even) {
+      background: #f8f9fb;
+    }
+    #summaryTab tr:hover, #rawdataTab tr:hover {
+      background: #eef2ff;
+    }
+    #summaryTab tbody tr:last-child td {
+      background: #f0f4ff;
+      font-weight: 600;
+      border-top: 2px solid #667eea;
+    }
+    .tab-content strong {
+      color: #667eea;
+    }
+    .info-text {
+      color: #718096;
+      font-size: 14px;
+      margin-top: 12px;
+      font-style: italic;
+    }
+    .error-message {
+      background: #fed7d7;
+      color: #c53030;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 16px 0;
+      border-left: 4px solid #c53030;
+    }
+    .success-message {
+      background: #c6f6d5;
+      color: #22543d;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 16px 0;
+      border-left: 4px solid #10b981;
+    }
+    .download-link {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+    .download-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+    }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(102, 126, 234, 0.2);
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 32px;
+      }
+      .form-section {
+        padding: 24px;
+      }
+      .tab-content {
+        padding: 24px;
+      }
+      #tabNavigation {
+        padding: 0 24px;
+      }
+      .button-group {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+        min-width: auto;
+      }
+      #summaryTab table, #rawdataTab table {
+        font-size: 12px;
+      }
+      #summaryTab th, #rawdataTab th {
+        padding: 10px;
+      }
+      #summaryTab td, #rawdataTab td {
+        padding: 8px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>QAPilot Alerts Portal</h1>
+      <p>Efficiently manage and export your alert reports</p>
+    </div>
+    <div class="main-card">
+      <div class="form-section">
+        <h2 style="margin-top: 0; color: #2d3748; font-size: 24px; margin-bottom: 28px;">API Configuration</h2>
+        <p style="color: #718096; margin-bottom: 20px;">Enter the API request values and click Execute to fetch alert data</p>
+        <form id="alertForm" style="margin: 0;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div class="form-group">
+              <label for="startdate">Start Date</label>
+              <input id="startdate" name="startdate" type="date" value="2026-04-27" required />
+            </div>
+            <div class="form-group">
+              <label for="enddate">End Date</label>
+              <input id="enddate" name="enddate" type="date" value="2026-04-30" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="alerttype">Alert Type</label>
+            <input id="alerttype" name="alerttype" type="text" value="2" required />
+          </div>
+          <div class="form-group">
+            <label for="token">Bearer Token</label>
+            <textarea id="token" name="token" placeholder="Paste your Bearer token here" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="validateKey">x-validate Value</label>
+            <input id="validateKey" name="validateKey" type="text" placeholder="Enter x-validate key" required />
+          </div>
+          <div class="form-group">
+            <label for="output">Output Filename</label>
+            <input id="output" name="output" type="text" value="alerts_last_week.xlsx" />
+          </div>
+          <div class="form-group" style="display:none;" id="projectFilterLabel">
+            <label for="projectFilter">Filter by Project</label>
+            <select id="projectFilter" name="project"></select>
+          </div>
+          <div class="button-group">
+            <button id="executeButton" type="button">🔘 Execute</button>
+          </div>
+        </form>
+      </div>
+      <div class="results-section">
+        <button id="exportButton" type="button" style="display:none; margin: 24px 36px 0; color: #ffffff; padding: 13px 28px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; min-width: 180px;">📥 Export to Excel</button>
+        <div id="tabNavigation" style="display:none;">
+          <button class="tab-button active" data-tab="summary">📊 Summary</button>
+          <button class="tab-button" data-tab="rawdata">🧾 Entire Raw Data</button>
+        </div>
+        <div id="summaryTab" class="tab-content" style="display:none;"></div>
+        <div id="rawdataTab" class="tab-content" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('alertForm');
+      const exportButton = document.getElementById('exportButton');
+      const projectFilter = document.getElementById('projectFilter');
+      const projectFilterLabel = document.getElementById('projectFilterLabel');
+      const executeButton = document.getElementById('executeButton');
+      const tabNavigation = document.getElementById('tabNavigation');
+      const summaryTab = document.getElementById('summaryTab');
+      const rawdataTab = document.getElementById('rawdataTab');
+      const tabButtons = document.querySelectorAll('.tab-button');
+
+      let previewData = null;
+      let lastPreviewBody = null;
+      let currentTab = 'summary';
+
+      const switchTab = (tabName) => {
+        currentTab = tabName;
+        summaryTab.style.display = tabName === 'summary' ? 'block' : 'none';
+        rawdataTab.style.display = tabName === 'rawdata' ? 'block' : 'none';
+        tabButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+      };
+
+      const renderSummaryTable = (summary) => {
+        const tenants = summary?.tenants || [];
+        const messages = summary?.messages || Object.keys(summary?.data || {}).sort();
+        const data = summary?.data || {};
+
+        if (!summary || !messages.length || !tenants.length) {
+          return '<div class="info-text">No summary data available.</div>';
+        }
+
+        let headerHtml = '<th>Alert Description / Tenant</th>';
+        let totals = {};
+        tenants.forEach(tenant => {
+          headerHtml += `<th>${tenant}</th>`;
+          totals[tenant] = 0;
+        });
+        headerHtml += '<th>Grand Total</th>';
+
+        let rowsHtml = '';
+        messages.forEach(message => {
+          let messageTotal = 0;
+          let rowHtml = `<tr><td>${message}</td>`;
+          tenants.forEach(tenant => {
+            const count = data[message]?.[tenant] || 0;
+            totals[tenant] += count;
+            messageTotal += count;
+            rowHtml += `<td style="text-align:center;">${count}</td>`;
+          });
+          rowHtml += `<td style="text-align:center;">${messageTotal}</td></tr>`;
+          rowsHtml += rowHtml;
+        });
+
+        let totalsHtml = '<tr><td><strong>Grand Total</strong></td>';
+        let grandTotal = 0;
+        tenants.forEach(tenant => {
+          grandTotal += totals[tenant];
+          totalsHtml += `<td style="text-align:center;"><strong>${totals[tenant]}</strong></td>`;
+        });
+        totalsHtml += `<td style="text-align:center;"><strong>${grandTotal}</strong></td></tr>`;
+
+        return `
+          <div style="overflow-x:auto;">
+            <p style="color: #718096; margin-bottom: 16px;"><strong>${messages.length}</strong> alert description(s) across <strong>${tenants.length}</strong> Tenant Name values</p>
+            <table>
+              <thead><tr>${headerHtml}</tr></thead>
+              <tbody>${rowsHtml}${totalsHtml}</tbody>
+            </table>
+          </div>
+        `;
+      };
+
+      const renderRawDataTable = (rows, columns) => {
+        if (!rows || !rows.length) {
+          return '<div class="info-text">No data available.</div>';
+        }
+        const displayColumns = columns.slice(0, 20);
+        const headerRow = displayColumns.map((col) => `<th>${col}</th>`).join('');
+        const dataRows = rows.map((row) => `<tr>${displayColumns.map((col) => `<td>${String(row[col] || '')}</td>`).join('')}</tr>`).join('');
+        return `
+          <div style="overflow-x:auto;">
+            <p style="color: #718096; margin-bottom: 16px;">Displaying <strong>${rows.length}</strong> records with first <strong>10 columns</strong> of <strong>${columns.length}</strong> total</p>
+            <table>
+              <thead><tr>${headerRow}</tr></thead>
+              <tbody>${dataRows}</tbody>
+            </table>
+          </div>
+        `;
+      };
+
+      const updateTabsDisplay = () => {
+        if (!previewData) return;
+        if (previewData.summary) {
+          summaryTab.innerHTML = renderSummaryTable(previewData.summary);
+        }
+        if (previewData.rawData && previewData.columns) {
+          rawdataTab.innerHTML = renderRawDataTable(previewData.rawData, previewData.columns);
+        }
+      };
+
+      const populateProjectFilter = (groups) => {
+        if (!groups || !groups.length) {
+          projectFilter.style.display = 'none';
+          projectFilterLabel.style.display = 'none';
+          return;
+        }
+        const options = [`<option value="">All projects</option>`].concat(groups.map((group) => `<option value="${encodeURIComponent(group.project)}">${group.project} (${group.count})</option>`));
+        projectFilter.innerHTML = options.join('');
+        projectFilter.style.display = 'block';
+        projectFilterLabel.style.display = 'block';
+      };
+
+      const getSelectedProject = () => {
+        return projectFilter.value ? decodeURIComponent(projectFilter.value) : '';
+      };
+
+      const fetchPreview = async (body) => {
+        return fetch('/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      };
+
+      const fetchDownload = async (body) => {
+        return fetch('/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      };
+
+      const executeAction = async () => {
+        exportButton.style.display = 'none';
+        exportButton.disabled = false;
+        exportButton.textContent = '📥 Export to Excel';
+        lastPreviewBody = null;
+        tabNavigation.style.display = 'none';
+        summaryTab.style.display = 'none';
+        rawdataTab.style.display = 'none';
+        summaryTab.innerHTML = '<div style="text-align:center; padding:40px;"><div class="spinner"></div> <span style="color:#667eea; font-weight:600;">Fetching data from API...</span></div>';
+        summaryTab.style.display = 'block';
+        const formData = new FormData(form);
+        const body = Object.fromEntries(formData.entries());
+        try {
+          const response = await fetchPreview(body);
+          const data = await response.json();
+          if (!response.ok) {
+            summaryTab.innerHTML = `<div class="error-message"><strong>? Error:</strong> ${data.error || 'Unknown error'}<pre style="margin-top:8px; white-space:pre-wrap; word-break:break-word;">${JSON.stringify(data.details || {}, null, 2)}</pre></div>`;
+            return;
+          }
+          lastPreviewBody = body;
+          previewData = data;
+          populateProjectFilter(data.groups);
+          updateTabsDisplay();
+          tabNavigation.style.display = 'flex';
+          switchTab('summary');
+          if (data.rowCount) {
+            exportButton.style.display = 'inline-block';
+          }
+        } catch (error) {
+          summaryTab.innerHTML = `<div class="error-message"><strong>? Error:</strong> ${error.message}</div>`;
+        }
+      };
+
+      const performDownload = async (body) => {
+        exportButton.disabled = true;
+        exportButton.textContent = '⏳ Exporting...';
+        try {
+          const response = await fetchDownload(body);
+          const data = await response.json();
+          if (!response.ok) {
+            summaryTab.innerHTML = `<div class="error-message"><strong>? Error:</strong> ${data.error || 'Unknown error'}<pre style="margin-top:8px; white-space:pre-wrap; word-break:break-word;">${JSON.stringify(data.details || {}, null, 2)}</pre></div>`;
+            return;
+          }
+          const downloadLink = data.downloadUrl ? `<a href="${data.downloadUrl}" target="_blank" class="download-link">📥 Download ${data.filename}</a>` : '';
+          summaryTab.innerHTML = `<div class="success-message"><strong>✅ Success!</strong> ${data.message}</div>${downloadLink}`;
+        } catch (error) {
+          summaryTab.innerHTML = `<div class="error-message"><strong>? Error:</strong> ${error.message}</div>`;
+        } finally {
+          exportButton.disabled = false;
+          exportButton.textContent = '?? Export to Excel';
+        }
+      };
+
+      executeButton.addEventListener('click', executeAction);
+      exportButton.addEventListener('click', async () => {
+        if (!lastPreviewBody) return;
+        const body = {
+          ...lastPreviewBody,
+          project: getSelectedProject() || undefined,
+          output: document.getElementById('output').value || `alerts_${document.getElementById('startdate').value}_to_${document.getElementById('enddate').value}.xlsx`,
+        };
+        await performDownload(body);
+      });
+      projectFilter.addEventListener('change', () => {
+        if (!previewData) return;
+        updateTabsDisplay();
+      });
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+    });
+  </script>
+</body>
+</html>
